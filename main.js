@@ -14,8 +14,9 @@ var spriteCart;
 var spriteBob;
 var cursors;
 
-var velocityX = 0;
-var network = new synaptic.Architect.LSTM(4, 25, 25, 25, 5);
+// "Always two there are, a master and an apprentice."
+var NNMaster = new synaptic.Architect.LSTM(4, 25, 25, 25, 1);
+//var NNApprentice = new synaptic.Architect.LSTM(4, 25, 25, 25, 5);
 
 function create() {
 
@@ -43,49 +44,41 @@ function create() {
 
 }
 
-var counter = 0;
-var direction = 1;
-var interval = 30
-
 var prevInput = [0.5, 0.5, 0.5, 0.5, 1];
 
 function update() {
-
+    
+    //keep the cart on a horizontal line
     spriteCart.body.setZeroVelocity();
     spriteCart.body.y = 300;
 
-    //velocityX = 0;
+    //our one control parameter
+    let velocityX = 0;
+    
+    //run master neural net on the previous input
+    let input = [velocityX, spriteCart.x / 800, spriteBob.x / 800, spriteBob.y / 600];
+    let output = network.activate(prevInput);
+    prevInput = input;
 
+    // master nn learns to predict what the current score will be given the previous data point.
+    let score = computeScore();
+    NNMaster.propagate(0.7, [score]); // (learning rate = 0.7, [target])
+    
+    //use master to find out what to do.
+    velocityX = queryNNMasterToOptimizeScore(input, NNMaster.copy(),);
+    
+    //manual override just in case we want to throw it a curveball
     if (cursors.left.isDown) {
         velocityX = -400;
     } else if (cursors.right.isDown) {
         velocityX = 400;
     }
     
-    interval = ((interval + 1) % 50) + 1;
-    
-    counter = (counter + 1) % interval;
-    
-    var input = [spriteCart.x / 800, spriteBob.x / 800, spriteBob.y / 600];
-    var output = network.activate(input);
-    if(counter === 0){
-        velocityX = 300 + Math.random() * 100;
-        velocityX *= direction;
-        direction *= -1;
-    }
-    
+    //perform operation on the system
     spriteCart.body.moveRight(velocityX);
-
-    // learn
-    var learningRate = 0.7;
     
-    let score = computeScore();
-    
-    var target = [...input, score];
-    network.propagate(learningRate, target);
-    prevInput = input;
-    
-    text.setText('error: ' + ((output[4] - target[4]) * 100) + '\noutput: ' + output[4] + '\ntarget: ' + target[4]);
+    //display some data
+    text.setText('error: ' + ((output[0] - target[0]) * 100) + '\noutput: ' + output[0] + '\ntarget: ' + target[4]);
 
 }
 
@@ -99,8 +92,16 @@ function computeScore() {
     return totalScore;
 }
 
-function queryNNModelForOptimalDecision(NN, dataPoints){
-    let winner  = [0.0, 0]; //[ winning score, index that won ]
+function queryNNMasterToOptimizeScore(dataPoints, NN){
+    let winner  = [0.0, 0.0]; //[ winning score, control variable value that won ]
     
+    for(let i = 0; i <= 1; i+=0.1){
+        dataPoints[0] = i;
+        let output = NN.copy().activate(dataPoints);
+        if(output > winner[0]){
+            winner = [output, i];
+        }
+    }
     
+    return winner[1];
 }
