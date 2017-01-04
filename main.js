@@ -57,7 +57,7 @@ function update() {
     
     //run master neural net on the previous input
     let input = [velocityX, spriteCart.x / 800, spriteBob.x / 800, spriteBob.y / 600];
-    let output = network.activate(prevInput);
+    let output = NNMaster.activate(prevInput);
     prevInput = input;
 
     // master nn learns to predict what the current score will be given the previous data point.
@@ -65,7 +65,7 @@ function update() {
     NNMaster.propagate(0.7, [score]); // (learning rate = 0.7, [target])
     
     //use master to find out what to do.
-    velocityX = queryNNMasterToOptimizeScore(input, NNMaster.copy(),);
+    velocityX = queryNNMasterToOptimizeScore(input, NNMaster);
     
     //manual override just in case we want to throw it a curveball
     if (cursors.left.isDown) {
@@ -76,9 +76,10 @@ function update() {
     
     //perform operation on the system
     spriteCart.body.moveRight(velocityX);
+    console.log(velocityX);
     
     //display some data
-    text.setText('error: ' + ((output[0] - target[0]) * 100) + '\noutput: ' + output[0] + '\ntarget: ' + target[4]);
+    //text.setText('error: ' + ((output[0] - target[0]) * 100) + '\noutput: ' + output[0] + '\ntarget: ' + target[0]);
 
 }
 
@@ -97,7 +98,7 @@ function queryNNMasterToOptimizeScore(dataPoints, NN){
     
     for(let i = 0; i <= 1; i+=0.1){
         dataPoints[0] = i;
-        let output = NN.copy().activate(dataPoints);
+        let output = NN.clone().activate(dataPoints);
         if(output > winner[0]){
             winner = [output, i];
         }
