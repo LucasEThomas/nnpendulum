@@ -1,0 +1,22 @@
+{
+  "name": "nn_inverted_pendulum_controller",
+  "authors": [
+    "vaporizationator"
+  ],
+  "description": "neural network learns to balance an inverted pendulum",
+  "main": "index.html",
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "phaser": "^2.6.2",
+    "synaptic": "^1.0.9"
+  }
+}
