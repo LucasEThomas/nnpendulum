@@ -47,7 +47,11 @@ function create() {
 console.log('created')
 }
 
-var prevInput = [0.5, 0.5, 0.5, 0.5, 0.5, 1];
+// How far in the past do we want our nn to live?
+var temporalOffset = 100;
+var prevInputs = [[0,0,0,0,0,0]];
+var prevScores = [0];
+
 
 function update() {
     
@@ -75,12 +79,21 @@ function update() {
     input[0] = (velocityX / 801) + 0.5;
     
     //run master neural net on the previous input
-    let output = NNMaster.activate(prevInput);
-    prevInput = input;
+    let output = NNMaster.activate(prevInputs[0]);
+    prevInputs.unshift(input);
 
     // master nn learns to predict what the current score will be given the previous data point.
-    let score = computeScore();
-    NNMaster.propagate(0.4, [score]); // (learning rate = 0.7, [target])
+    let currentScore = computeCurrentScore();
+    prevScores.unshift(currentScore);
+    let aggrigateScore = computeAggregateScore(currentScore);
+    
+    //wait for the data queue to fill up before learning from it!
+    if(prevScores.length === temporalOffset){
+        NNMaster.propagate(0.4, [aggrigateScore]); // (learning rate = 0.4, [target])
+        prevScores.shift();
+        prevInputs.shift();
+    }
+    
     
     //perform operation on the system
     spriteCart.body.moveRight(velocityX);
@@ -90,7 +103,7 @@ function update() {
 
 }
 
-function computeScore() {
+function computeCurrentScore() {
     let distY = spriteCart.y - spriteBob.y;
 
     let pendulumScore = (distY + 150) / 300
@@ -98,6 +111,14 @@ function computeScore() {
     let totalScore = pendulumScore * (1 - (Math.abs(spriteCart.x - 400) / 400))
 
     return totalScore;
+}
+
+function computeAggregateScore(currentScore) {
+    let aggrigateScore = 0;
+    prevInputs.forEach((n)=>{
+        aggrigateScore += n[5];
+    });
+    aggrigateScore /= temporalOffset;
 }
 
 function queryNNMasterToOptimizeScore(dataPoints, NN){
