@@ -1,3 +1,5 @@
+console.log('begin');
+
 var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'phaser-example', {
     preload: preload,
     create: create,
@@ -5,7 +7,7 @@ var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'phaser-example', {
 });
 
 function preload() {
-
+console.log('preload');
     game.load.image('ball', 'projectileRed.png');
 
 }
@@ -15,9 +17,10 @@ var spriteBob;
 var cursors;
 
 // "Always two there are, a master and an apprentice."
-var NNMaster = new synaptic.Architect.LSTM(4, 25, 25, 25, 1);
-//var NNApprentice = new synaptic.Architect.LSTM(4, 25, 25, 25, 5);
+var NNMaster = new synaptic.Architect.Perceptron(6, 10, 10, 10, 10, 10, 10, 1);
 
+//var NNApprentice = new synaptic.Architect.LSTM(4, 25, 25, 25, 5);
+console.log('beforeCreate');
 function create() {
 
     //	Enable p2 physics
@@ -40,11 +43,11 @@ function create() {
 
     cursors = game.input.keyboard.createCursorKeys();
 
-    var line = new Phaser.Line(spriteCart.x, spriteCart.y, spriteBob.x, spriteBob.y);
-
+    //var line = new Phaser.Line(spriteCart.x, spriteCart.y, spriteBob.x, spriteBob.y);
+console.log('created')
 }
 
-var prevInput = [0.5, 0.5, 0.5, 0.5, 1];
+var prevInput = [0.5, 0.5, 0.5, 0.5, 0.5, 1];
 
 function update() {
     
@@ -52,31 +55,35 @@ function update() {
     spriteCart.body.setZeroVelocity();
     spriteCart.body.y = 300;
 
+    //the scenario vector
+    let input = [0, spriteCart.x / 800, spriteBob.x / 800, spriteBob.y / 600, spriteBob.body.velocity.x / 3000, spriteBob.body.velocity.y / 3000]
+    
     //our one control parameter
-    let velocityX = 0;
-    
-    //run master neural net on the previous input
-    let input = [velocityX, spriteCart.x / 800, spriteBob.x / 800, spriteBob.y / 600];
-    let output = NNMaster.activate(prevInput);
-    prevInput = input;
-
-    // master nn learns to predict what the current score will be given the previous data point.
-    let score = computeScore();
-    NNMaster.propagate(0.7, [score]); // (learning rate = 0.7, [target])
-    
     //use master to find out what to do.
-    velocityX = queryNNMasterToOptimizeScore(input, NNMaster);
+    let velocityX = (queryNNMasterToOptimizeScore(input, NNMaster) - 0.5) * 800;
+    console.log(velocityX);
     
     //manual override just in case we want to throw it a curveball
     if (cursors.left.isDown) {
         velocityX = -400;
     } else if (cursors.right.isDown) {
         velocityX = 400;
+    } else if (cursors.down.isDown) {
+        velocityX = 0;
     }
+    
+    input[0] = (velocityX / 801) + 0.5;
+    
+    //run master neural net on the previous input
+    let output = NNMaster.activate(prevInput);
+    prevInput = input;
+
+    // master nn learns to predict what the current score will be given the previous data point.
+    let score = computeScore();
+    NNMaster.propagate(0.4, [score]); // (learning rate = 0.7, [target])
     
     //perform operation on the system
     spriteCart.body.moveRight(velocityX);
-    console.log(velocityX);
     
     //display some data
     //text.setText('error: ' + ((output[0] - target[0]) * 100) + '\noutput: ' + output[0] + '\ntarget: ' + target[0]);
@@ -98,7 +105,7 @@ function queryNNMasterToOptimizeScore(dataPoints, NN){
     
     for(let i = 0; i <= 1; i+=0.1){
         dataPoints[0] = i;
-        let output = NN.clone().activate(dataPoints);
+        let output = NN.activate(dataPoints);
         if(output > winner[0]){
             winner = [output, i];
         }
