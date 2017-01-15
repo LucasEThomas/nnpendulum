@@ -46,6 +46,8 @@ function create() {
     spriteBob = game.add.sprite(400, 400, 'bob');
 
     game.physics.p2.enable([spriteCart, spriteBob]);
+    spriteBob.body.fixedRotation = true;
+    spriteCart.body.fixedRotation = true;
 
     var constraint = game.physics.p2.createDistanceConstraint(spriteCart, spriteBob, 150);
 
