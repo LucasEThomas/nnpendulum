@@ -29,7 +29,7 @@ function create() {
     let spriteBackground = game.add.sprite(0, 0, 'background');
     spriteBackground.width = 800;
     spriteBackground.height = 600;
-    game.add.sprite(40, 340, 'ground').scale.setTo(0.90, 1);
+    game.add.sprite(40, 370, 'ground').scale.setTo(0.90, 1);
 
     text = game.add.text(20, 20, 'filling up data queue...', {
         fill: '#22aa55',
@@ -42,6 +42,7 @@ function create() {
 
     //  Add 2 sprites which we'll join with a spring
     spriteCart = game.add.sprite(400, 300, 'cart');
+    spriteCart.pivot.y = -30;
     lineGraphics = game.add.graphics(0, 0);
     spriteBob = game.add.sprite(400, 400, 'bob');
 
