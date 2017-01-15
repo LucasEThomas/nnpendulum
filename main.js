@@ -18,9 +18,10 @@ var lineGraphics;
 var spriteCart;
 var spriteBob;
 var cursors;
+var learningRate = 0.4;
 
 // "Always two there are, a master and an apprentice."
-var NNMaster = new synaptic.Architect.Perceptron(6, 10, 10, 10, 10, 10,  1);
+var NNMaster = new synaptic.Architect.Perceptron(6, 15, 15, 15, 15, 15, 15, 15, 1);
 
 //var NNApprentice = new synaptic.Architect.LSTM(4, 25, 25, 25, 5);
 console.log('beforeCreate');
@@ -65,7 +66,7 @@ var prevScores = [0];
 
 
 function update() {
-    
+    drawAestheticPendulumLine(spriteCart.x, spriteCart.y, spriteBob.x, spriteBob.y);
     //keep the cart on a horizontal line
     spriteCart.body.setZeroVelocity();
     spriteCart.body.y = 300;
@@ -101,7 +102,7 @@ function update() {
     if(prevInputs.length === temporalOffset){
         //run master neural net in the past, and train it to predict the average score
         let output = NNMaster.activate(prevInputs[temporalOffset - 1]);
-        NNMaster.propagate(0.5, [aggrigateScore]); // (learning rate = 0.4, [target])
+        NNMaster.propagate(learningRate, [aggrigateScore]); // (learning rate = 0.4, [target])
         prevScores.pop();
         prevInputs.pop();
         
@@ -117,7 +118,6 @@ predicted best cart velocity: ${predictedOptimumCartVelocity}`
     
     //perform operation on the system
     spriteCart.body.moveRight(velocityX);
-    drawAestheticPendulumLine(spriteCart.x, spriteCart.y, spriteBob.x, spriteBob.y);
 }
 
 function computeCurrentScore() {
